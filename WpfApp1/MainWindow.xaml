@@ -1,0 +1,21 @@
+﻿<Window x:Class="WpfApp1.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp1"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="1000" Width="2000">
+    <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
+        <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+            <Canvas Width="10000" Height="10000" x:Name="canvas" Background="#00FFFFFF">
+                <TextBox x:Name="kcentroid" Height="22" Canvas.Left="41" TextWrapping="Wrap" Text="3" Canvas.Top="144" Width="21"/>
+                <Button Content="k centroid" Canvas.Left="15" Canvas.Top="171" Width="75" Click="kCentroid" Height="19"/>
+                <TextBox x:Name="kmedoid" Height="22" Canvas.Left="141" TextWrapping="Wrap" Text="3" Canvas.Top="144" Width="21" RenderTransformOrigin="0.45,0.435"/>
+                <Button Content="k medoid" Canvas.Left="115" Canvas.Top="171" Width="75" Click="kMedoid" Height="19"/>
+                <Button Content="agglomerativne" Canvas.Left="215" Canvas.Top="171" Width="75" Click="Aggl" Height="19"/>
+                <Button Content="Divisive" Canvas.Left="315" Canvas.Top="171" Width="75" Click="Divise" Height="19"/>
+            </Canvas>
+        </ScrollViewer>
+    </Grid>
+</Window>
