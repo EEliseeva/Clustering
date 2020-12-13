@@ -8,58 +8,8 @@ namespace WpfApp1
 {
     class Agglomerative
     {
-
-        public static int Size = 5001;//10001;
-        public static int Offset = 50; //100
-        public static int NumOfPoints = 20000; //40000
-        public static int RandPoints = 20;
-
         public static short[,] DistMatrix;
         public static List<List<(int, int)>> Clusters;
-
-        public static List<(int, int)> CreateData()
-        {
-            int[,] map = new int[Size + 1, Size + 1];
-            List<(int, int)> data = new List<(int, int)>(NumOfPoints + RandPoints);
-            List<(int, int)> initPoints = new List<(int, int)>(RandPoints);
-            Random r = new Random();
-            int x, y;
-            for (int i = 0; i < RandPoints; i++)
-            {
-                x = r.Next(Size + 1);
-                y = r.Next(Size + 1);
-                while (map[y, x] == 1)
-                {
-                    x = r.Next(Size + 1);
-                    y = r.Next(Size + 1);
-                }
-                map[y, x] = 1;
-                (int, int) point;
-                point.Item1 = y;
-                point.Item2 = x;
-                initPoints.Add(point);
-                data.Add(point);
-            }
-            int X_offset, Y_offset, rndInd;
-            for (int i = 0; i < NumOfPoints; i++)
-            {
-                rndInd = r.Next(RandPoints);
-                y = initPoints[rndInd].Item1;
-                x = initPoints[rndInd].Item2;
-                X_offset = r.Next(-Offset, Offset);
-                Y_offset = r.Next(-Offset, Offset);
-                while (y + Y_offset < 0 || y + Y_offset >= Size || x + X_offset < 0 || x + X_offset >= Size)
-                {
-                    X_offset = r.Next(-Offset, Offset);
-                    Y_offset = r.Next(-Offset, Offset);
-                }
-                (int, int) point;
-                point.Item1 = y + Y_offset;
-                point.Item2 = x + X_offset;
-                data.Add(point);
-            }
-            return data;
-        }
 
         public static short CalcDistancePoints((int, int) center, (int, int) point)
         {
@@ -210,22 +160,20 @@ namespace WpfApp1
             }
         }
 
-        public static List<List<(int, int)>> Start()
+        public static void Start(List<(int, int)> data)
         {
-            DistMatrix = new short[NumOfPoints + RandPoints, NumOfPoints + RandPoints];
-            Clusters = new List<List<(int, int)>>(NumOfPoints + RandPoints);
+            DistMatrix = new short[data.Count, data.Count];
+            Clusters = new List<List<(int, int)>>(data.Count);
             Random r = new Random();
-            List<(int, int)> data = CreateData();
             CreateFirstMatrix(data);
             UpdateClusters();
-            int numberOfClust = 7;
+            int numberOfClust = 1;
             while(Clusters.Count > numberOfClust)
             {
                 CreateClusterMatrix();
                 UpdateClusters();
                 Console.WriteLine(Clusters.Count);
             }
-            return Clusters;
         }
     }
 }

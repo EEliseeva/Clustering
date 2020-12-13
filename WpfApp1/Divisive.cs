@@ -8,69 +8,20 @@ namespace WpfApp1
 {
     class Divisive
     {
-        public static int Size = 501;//10001;
-        public static int Offset = 50; //100
-        public static int NumOfPoints = 10000; //40000
-        public static int RandPoints = 20;
-
         public static List<List<(int, int)>> Clusters;
-        public static List<int> Costs = new List<int>();
+        public static List<double> Costs = new List<double>();
 
-        public static List<(int, int)> CreateData()
+        public static double CalcDistancePoints((double, double) center, (int, int) point)
         {
-            int[,] map = new int[Size + 1, Size + 1];
-            List<(int, int)> data = new List<(int, int)>(NumOfPoints + RandPoints);
-            List<(int, int)> initPoints = new List<(int, int)>(RandPoints);
-            Random r = new Random();
-            int x, y;
-            for (int i = 0; i < RandPoints; i++)
-            {
-                x = r.Next(Size + 1);
-                y = r.Next(Size + 1);
-                while (map[y, x] == 1)
-                {
-                    x = r.Next(Size + 1);
-                    y = r.Next(Size + 1);
-                }
-                map[y, x] = 1;
-                (int, int) point;
-                point.Item1 = y;
-                point.Item2 = x;
-                initPoints.Add(point);
-                data.Add(point);
-            }
-            int X_offset, Y_offset, rndInd;
-            for (int i = 0; i < NumOfPoints; i++)
-            {
-                rndInd = r.Next(RandPoints);
-                y = initPoints[rndInd].Item1;
-                x = initPoints[rndInd].Item2;
-                X_offset = r.Next(-Offset, Offset);
-                Y_offset = r.Next(-Offset, Offset);
-                while (y + Y_offset < 0 || y + Y_offset >= Size || x + X_offset < 0 || x + X_offset >= Size)
-                {
-                    X_offset = r.Next(-Offset, Offset);
-                    Y_offset = r.Next(-Offset, Offset);
-                }
-                (int, int) point;
-                point.Item1 = y + Y_offset;
-                point.Item2 = x + X_offset;
-                data.Add(point);
-            }
-            return data;
-        }
-
-        public static int CalcDistancePoints((int, int) center, (int, int) point)
-        {
-            int sqrDistance = 0;
-            sqrDistance += (int)(Math.Pow((center.Item1 - point.Item1), 2) + Math.Pow((center.Item2 - point.Item2), 2));
+            double sqrDistance = 0;
+            sqrDistance += Math.Pow((center.Item1 - point.Item1), 2) + Math.Pow((center.Item2 - point.Item2), 2);
             return sqrDistance;
         }
 
-        public static int[] SetClustering(List<(int, int)> data, List<(int, int)> centers)
+        public static int[] SetClustering(List<(int, int)> data, List<(double, double)> centers)
         {
-            int minDist;
-            int distance;
+            double minDist;
+            double distance;
             int minIndex = 0;
             int index = 0;
             int[] clustering = new int[data.Count];
@@ -93,41 +44,42 @@ namespace WpfApp1
             return clustering;
         }
 
-        public static List<(int, int)> UpdateClustering(List<(int, int)> centers, List<(int, int)> data)
+        public static List<(double, double)> UpdateClustering(List<(double, double)> centers, List<(int, int)> data)
         {
-            int[] newClustering;
             int[] clustering = SetClustering(data, centers);
             int dataLen = clustering.Length;
-            List<(int, int)> newCenters = new List<(int, int)>();
-            int[] clasterCounts = new int[centers.Count];
+            List<(double, double)> newCenters = new List<(double, double)>();
+            int[] clusterCounts = new int[centers.Count];
             int[] sumX = new int[centers.Count];
             int[] sumY = new int[centers.Count];
             for (int i = 0; i < dataLen; i++)
             {
-                clasterCounts[clustering[i]]++;
+                clusterCounts[clustering[i]]++;
                 sumX[clustering[i]] += data[i].Item2;
                 sumY[clustering[i]] += data[i].Item1;
             }
+
             for (int i = 0; i < centers.Count; i++)
             {
-                (int, int) newCenter;
-                if (clasterCounts[i] > 0)
+                (double, double) newCenter;
+                if (clusterCounts[i] > 1)
                 {
-                    newCenter.Item2 = (int)(sumX[i] / clasterCounts[i]);
-                    newCenter.Item1 = (int)(sumY[i] / clasterCounts[i]);
+                    newCenter.Item2 = sumX[i] / clusterCounts[i];
+                    newCenter.Item1 = sumY[i] / clusterCounts[i];
                     newCenters.Add(newCenter);
                 }
-                else
+                else if (clusterCounts[i] == 1)
                 {
                     newCenters.Add(centers[i]);
                 }
             }
-            newClustering = SetClustering(data, newCenters);
+
             return newCenters;
         }
 
-        public static bool SameCenters(List<(int, int)> prevCenters, List<(int, int)> newCenters)
+        public static bool SameCenters(List<(double, double)> prevCenters, List<(double, double)> newCenters)
         {
+            if (prevCenters.Count != newCenters.Count) return false;
             for (int i = 0; i < prevCenters.Count; i++)
             {
                 if (prevCenters[i] != newCenters[i]) return false;
@@ -135,20 +87,36 @@ namespace WpfApp1
             return true;
         }
 
+        private static List<(double, double)> ChooseCenters(List<(int, int)> cluster)
+        {
+            List<(double, double)> centers = new List<(double, double)>();
+            double maxDistance = -1;
+            int[] bestComb = new int[2];
+            for (int i = 0; i < cluster.Count; i++)
+            {
+                for (int j = 0; j < i; j++)
+                {
+                    double distance = CalcDistancePoints(cluster[i], cluster[j]);
+                    if (distance > maxDistance)
+                    {
+                        maxDistance = distance;
+                        bestComb[0] = i;
+                        bestComb[1] = j;
+                    }
+                }
+            }
+            centers.Add(cluster[bestComb[0]]);
+            centers.Add(cluster[bestComb[1]]);
+            return centers;
+        }
+
         public static void DivideClusters(List<(int, int)> cluster)
         {
-            List<(int, int)> centers = new List<(int, int)>();
-            Random r = new Random();
-            int index;
-            for (int i = 0; i < 2; i++)
-            {
-                index = r.Next(cluster.Count);
-                (int, int) center;
-                center.Item1 = cluster[index].Item1;
-                center.Item2 = cluster[index].Item2;
-                centers.Add(center);
-            }
-            List<(int, int)> prevCenters = new List<(int, int)>();
+            List<(double, double)> centers;
+
+            centers = ChooseCenters(cluster);
+
+            List<(double, double)> prevCenters = new List<(double, double)>();
             for (int i = 0; i < centers.Count; i++)
             {
                 prevCenters.Add(centers[i]);
@@ -158,9 +126,9 @@ namespace WpfApp1
             {
                 updatedCenters = UpdateClustering(centers, cluster);
                 prevCenters.Clear();
-                for (int i = 0; i < centers.Count; i++)
+                foreach(var center in updatedCenters) 
                 {
-                    prevCenters.Add(updatedCenters[i]);
+                    prevCenters.Add(center);
                 }
             }
             int[] clustering = SetClustering(cluster, updatedCenters);
@@ -174,21 +142,28 @@ namespace WpfApp1
                 }
                 else secondNewCluster.Add(cluster[i]);
             }
-            index = Clusters.IndexOf(cluster);
+            Console.WriteLine("!!!" + firstNewCluster.Count + " " + secondNewCluster.Count);
+            int index = Clusters.IndexOf(cluster);
             Costs.RemoveAt(index);
             Clusters.Remove(cluster);
-            Clusters.Add(firstNewCluster);
-            Clusters.Add(secondNewCluster);
             (int, int) firstNewClusterCenter = FindCentroid(firstNewCluster);
             (int, int) secondNewClusterCenter = FindCentroid(secondNewCluster);
-            Costs.Add(CalcClusterCost(firstNewCluster, firstNewClusterCenter));
-            Costs.Add(CalcClusterCost(secondNewCluster, secondNewClusterCenter));
+            if (firstNewClusterCenter.Item1 != -1)
+            {
+                Clusters.Add(firstNewCluster);
+                Costs.Add(CalcClusterCost(firstNewCluster, firstNewClusterCenter));
+            }
+            if (secondNewClusterCenter.Item1 != -1)
+            {
+                Clusters.Add(secondNewCluster);
+                Costs.Add(CalcClusterCost(secondNewCluster, secondNewClusterCenter));
+            }
 
         }
 
-        public static int CalcClusterCost(List<(int, int)> cluster, (int, int) center)
+        public static double CalcClusterCost(List<(int, int)> cluster, (int, int) center)
         {
-            int cost = 0;
+            double cost = 0;
             foreach(var point in cluster)
             {
                 cost += CalcDistancePoints(point, center);
@@ -207,18 +182,24 @@ namespace WpfApp1
                 sumX += cluster[i].Item2;
                 sumY += cluster[i].Item1;
             }
-            centroid.Item2 = (int)(sumX / cluster.Count);
-            centroid.Item1 = (int)(sumY / cluster.Count);
+            if (cluster.Count > 0)
+            {
+                centroid.Item2 = (int)(sumX / cluster.Count);
+                centroid.Item1 = (int)(sumY / cluster.Count);
+            }
+            else
+            {
+                centroid.Item1 = -1;
+                centroid.Item2 = -1;
+            }
             return centroid;
         }
 
-        public static List<List<(int, int)>> Start()
+        public static void Start(List<(int, int)> data)
         {
-            Clusters = new List<List<(int, int)>>(NumOfPoints + RandPoints);
+            Clusters = new List<List<(int, int)>>(data.Count);
             Random r = new Random();
-            List<(int, int)> data = CreateData();
-            int numberOfClust = 5;
-            int maxCost = -1;
+            double maxCost = -1;
             int maxIndex = -1;
             List<(int, int)> firstCluster = new List<(int, int)>();
             foreach (var point in data)
@@ -227,22 +208,23 @@ namespace WpfApp1
             }
             Clusters.Add(firstCluster);
             Costs.Add(CalcClusterCost(firstCluster, FindCentroid(firstCluster)));
-            while (Clusters.Count < numberOfClust)
+            while (Clusters.Count < data.Count)
             {
                 for (int i = 0; i < Clusters.Count; i++)
                 {
-                    if (Costs[i] > maxCost)
+                    if (Costs[i] > maxCost && Clusters[i].Count > 1)
                     {
                         maxIndex = i;
                         maxCost = Costs[i];
                     }
                 }
+                if (maxCost == 0) break;
+                Console.WriteLine(Clusters[maxIndex].Count + " " + maxCost);
                 DivideClusters(Clusters[maxIndex]);
-                Console.WriteLine(maxCost);
                 maxCost = -1;
                 maxIndex = -1;
             }
-            return Clusters;
+            Console.WriteLine();
         }
     }
 }

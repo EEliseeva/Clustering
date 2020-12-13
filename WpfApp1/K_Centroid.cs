@@ -17,72 +17,27 @@ namespace WpfApp1
             return clustering;
         }
 
-        public static List<(int, int)> CreateData()
-        {
-            int[,] map = new int[10001, 10001];
-            List<(int, int)> data = new List<(int, int)>(40020);
-            List<(int, int)> initPoints = new List<(int, int)>(20);
-            Random r = new Random();
-            int x, y;
-            for (int i = 0; i < 20; i++)
-            {
-                x = r.Next(9901);
-                y = r.Next(9901);
-                while (map[y, x] == 1)
-                {
-                    x = r.Next(9901);
-                    y = r.Next(9901);
-                }
-                map[y, x] = 1;
-                (int, int) point;
-                point.Item1 = y;
-                point.Item2 = x;
-                initPoints.Add(point);
-                data.Add(point);
-            }
-            int X_offset, Y_offset, rndInd;
-            for (int i = 0; i < 40000; i++)
-            {
-                rndInd = r.Next(20);
-                y = initPoints[rndInd].Item1;
-                x = initPoints[rndInd].Item2;
-                X_offset = r.Next(-100, 100);
-                Y_offset = r.Next(-100, 100);
-                while (y + Y_offset < 0 || y + Y_offset >= 10001 || x + X_offset < 0 || x + X_offset >= 10001)
-                {
-                    X_offset = r.Next(-100, 100);
-                    Y_offset = r.Next(-100, 100);
-                }
-                (int, int) point;
-                point.Item1 = y + Y_offset;
-                point.Item2 = x + X_offset;
-                map[y + Y_offset, x + X_offset] = 1;
-                data.Add(point);
-            }
-            return data;
-        }
-
         public static (int[], List<(int, int)>) UpdateClustering(List<(int, int)> centers, int[] clustering, List<(int, int)> data)
         {
             int dataLen = clustering.Length;
             int[] newClustering;
             List<(int, int)> newCenters = new List<(int, int)>();
-            int[] clasterCounts = new int[centers.Count];
+            int[] clusterCounts = new int[centers.Count];
             int[] sumX = new int[centers.Count];
             int[] sumY = new int[centers.Count];
             for (int i = 0; i < dataLen; i++)
             {
-                clasterCounts[clustering[i]]++;
+                clusterCounts[clustering[i]]++;
                 sumX[clustering[i]] += data[i].Item2;
                 sumY[clustering[i]] += data[i].Item1;
             }
             for (int i = 0; i < centers.Count; i++)
             {
                 (int, int) newCenter;
-                if (clasterCounts[i] > 0)
+                if (clusterCounts[i] > 0)
                 {
-                    newCenter.Item2 = (int)(sumX[i] / clasterCounts[i]);
-                    newCenter.Item1 = (int)(sumY[i] / clasterCounts[i]);
+                    newCenter.Item2 = (int)(sumX[i] / clusterCounts[i]);
+                    newCenter.Item1 = (int)(sumY[i] / clusterCounts[i]);
                     newCenters.Add(newCenter);
                 }
                 else
@@ -135,17 +90,16 @@ namespace WpfApp1
             return true;
         }
 
-        public static (List<(int, int)>, int[], List<(int, int)>) Start(int k)
+        public static (List<(int, int)>, int[], List<(int, int)>) Start(int k, List<(int, int)> data, int size)
         {
             Random r = new Random();
-            List<(int, int)> data = CreateData();
             int[] clustering = InitClustering(data.Count, k);
             List<(int, int)> centers = new List<(int, int)>();
             int x, y;
             for (int i = 0; i < k; i++)
             {
-                x = r.Next(10002);
-                y = r.Next(10002);
+                x = r.Next(size);
+                y = r.Next(size);
                 (int, int) center;
                 center.Item1 = y;
                 center.Item2 = x;
